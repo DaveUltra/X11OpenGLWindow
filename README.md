@@ -7,27 +7,27 @@ The X windowing system uses a client/server architecture. A single machine can h
 ## Creating an X Window
 The first thing to do when opening a window under X is to tell it where the screen is. Although there are several ways of telling the client where the server is, the most fullproof is the **DISPLAY** environment variable, or using *NULL* for default.
 
-The function ```XOpenDisplay(char* display)``` makes the connection to the X server. It takes one argument, a string using the display format described above, or *NULL* to use the default. It returns a pointer to the display (of type *Display*) on success or *NULL* on error.
+The function ```XOpenDisplay(char* display)``` makes the connection to the X server. It takes one argument, a string using the display format described above, or `NULL` to use the default. It returns a pointer to the display (of type `Display`) on success or `NULL` on error.
 
 With the pointer the display, find the screen using the ```DefaultScreenOfDisplay(Display* display)``` function. This function takes one parameter, the pointer to the **`Display`** object that was found using **`XOpenDisplay`**. **`DefaultScreenOfDisplay`** returns a pointer of type `Screen` on success, `NULL` on error. 
 
-To find the screen ID of the screen use the ```DefaultScreen(Display* display)``` function, this is almost identical to **DefaultScreenOfDisplay** except that it retuns an integer.
+To find the screen ID of the screen use the `DefaultScreen(Display* display)` function, this is almost identical to **`DefaultScreenOfDisplay`** except that it retuns an integer.
 
-With just a display and a screen a window can be created with the **XCreateSimpleWindow** function. The prototype for this function is as follows
+With just a display and a screen a window can be created with the **`XCreateSimpleWindow`** function. The prototype for this function is as follows
 ```c
 Window XCreateSimpleWindow(Display* display, Window* parent, int x, int y, uint borderw, ulong border, ulong background);
 ```
-The first argument *display* is a pointer to the display object acquired using **XOpenDisplay**. The next argument, parent is a pointer to the window opening this one. If this is the first window of a program opening, use the ```RootWindowOfScreen(Screen* screen)``` function. This function takes one argument, the pointer to the screen that was acquired using **DefaultScreenOfDisplay**
+The first argument *`display`* is a pointer to the display object acquired using **`XOpenDisplay`**. The next argument, parent is a pointer to the window opening this one. If this is the first window of a program opening, use the ```RootWindowOfScreen(Screen* screen)``` function. This function takes one argument, the pointer to the screen that was acquired using **`DefaultScreenOfDisplay`**
 
-The next four arguments are the location and sizeof the window. the *border-width* argument specifies the width of the window border in pixels. The next argument *border* is the color of the border. The last paramater *background* is simply the background color of the window.
+The next four arguments are the location and size of the window. The *`border-width`* argument specifies the width of the window border in pixels. The next argument *`border`* is the color of the border. The last paramater *`background`* is simply the background color of the window.
 
-There are several utility functions to acquire system colors (of type ulong). ```BlackPixel(Display* display, int screenId)``` and ```WhitePixel(Display* display, int screenId)``` are great examples. All of these functions take two arguments, a pointer to the display to use and the screenId being used.
+There are several utility functions to acquire system colors (of type ulong). `BlackPixel(Display* display, int screenId)` and `WhitePixel(Display* display, int screenId)` are great examples. All of these functions take two arguments, a pointer to the display to use and the screenId being used.
 
-The next step is to clear the window using ```XClearWindow(Display* display, Window* window)```, this function takes two arguments the display and the window to clear. Finally raise the window using the ```XMapRaised(Display* display, Window* window)``` function, which uses the same arguments as **XClearWindow**
+The next step is to clear the window using `XClearWindow(Display* display, Window* window)`, this function takes two arguments the display and the window to clear. Finally raise the window using the `XMapRaised(Display* display, Window* window)` function, which uses the same arguments as **`XClearWindow`**
 
-At this point the window will not show up yet. First it must process messages (such as show window) that are sent to it. To process messages, start a "message loop", in it call ```XNextEvent(Display* display, XEvent* e)```. This function will return the current active event, or block until the next event is recieved. It take a *Display* object as it's first argument and writes to an *XEvent* pointer that is it's second argument.
+At this point the window will not show up yet. First it must process messages (such as show window) that are sent to it. To process messages, start a "message loop", in it call `XNextEvent(Display* display, XEvent* e)`. This function will return the current active event, or block until the next event is received. It takes a *`Display`* object as it's first argument and writes to an *`XEvent`* pointer that is it's second argument.
 
-After the window is finished, force the window to close with the ```XDestroyWindow(Display* display, Window window)``` function and cleanup the display using the ```XCloseDisplay(Display* display)``` function, which takes one argument, the display to close.
+After the window is finished, force the window to close with the `XDestroyWindow(Display* display, Window window)` function and cleanup the display using the `XCloseDisplay(Display* display)` function, which takes one argument, the display to close.
 
 ### Sample Code (C)
 
@@ -53,10 +53,10 @@ int main(int argc, char** argv) {
 	// Open the window
 	window = XCreateSimpleWindow(display, RootWindowOfScreen(screen), 0, 0, 320, 200, 1, BlackPixel(display, screenId), WhitePixel(display, screenId));
 
-    // Show the window
+	// Show the window
 	XClearWindow(display, window);
 	XMapRaised(display, window);
-	
+
 	// Enter message loop
 	while (true) {
 		XNextEvent(display, &ev);
@@ -123,45 +123,45 @@ int main(int argc, char** argv) {
 
 	XSelectInput(display, window, KeyPressMask | KeyReleaseMask | KeymapStateMask);
 
-    // Show the window
+	// Show the window
 	XClearWindow(display, window);
 	XMapRaised(display, window);
-	
+
 	// Variables used in message loop
 	char str[25] = {0}; 
-    KeySym keysym = 0;
-    int len = 0;
-    bool running = true;
+	KeySym keysym = 0;
+	int len = 0;
+	bool running = true;
 
 	// Enter message loop
 	while (running) {
 		XNextEvent(display, &ev);
 		switch(ev.type) {
-            case KeymapNotify:
-                XRefreshKeyboardMapping(&ev.xmapping);
+		case KeymapNotify:
+			XRefreshKeyboardMapping(&ev.xmapping);
+			break;
+		case KeyPress:
+			len = XLookupString(&ev.xkey, str, 25, &keysym, NULL);
+			if (len > 0) {
+				std::cout << "Key pressed: " << str << " - " << len << " - " << keysym <<'\n';
+			}
+			if (keysym == XK_Escape) {
+				running = false;
+			}
             break;
-            case KeyPress:
-                len = XLookupString(&ev.xkey, str, 25, &keysym, NULL);
-                if (len > 0) {
-                    std::cout << "Key pressed: " << str << " - " << len << " - " << keysym <<'\n';
-                }
-                if (keysym == XK_Escape) {
-                    running = false;
-                }
-            break;
-            case KeyRelease:
-                len = XLookupString(&ev.xkey, str, 25, &keysym, NULL);
-                if (len > 0) {
-                    std::cout << "Key released: " << str << " - " << len << " - " << keysym <<'\n';
-                }
-            break;
-        }
+		case KeyRelease:
+			len = XLookupString(&ev.xkey, str, 25, &keysym, NULL);
+			if (len > 0) {
+				std::cout << "Key released: " << str << " - " << len << " - " << keysym <<'\n';
+			}
+			break;
+		}
 	}
 
 	// Cleanup
 	XDestroyWindow(display, window);
 	XCloseDisplay(display);
-	return 1;
+	return 0;
 }
 ```
 Compile the program using the following command line
